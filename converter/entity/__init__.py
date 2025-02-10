@@ -1,10 +1,11 @@
-from converter.entity.enums import Step, Button, Orientation
+from converter.entity.enums import Button, Orientation
+from converter.entity.state import UserState
 from converter.entity.user_data import UserData
 
 
 __all__ = [
-    "Step",
     "Button",
     "Orientation",
+    "UserState",
     "UserData",
 ]

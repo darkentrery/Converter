@@ -1,12 +1,6 @@
 import enum
 
 
-class Step(enum.Enum):
-    START = "start"
-    UPLOADING = "uploading"
-    ORIENTATION = "choosing_orientation"
-
-
 class Button(enum.Enum):
     LPG_TO_PDF: str = "Конвертация JPG to PDF"
     READY: str = "Готово"

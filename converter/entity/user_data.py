@@ -1,9 +1,10 @@
 from pydantic import BaseModel, Field
 
-from converter.entity import Step, Orientation
+from converter.entity import Orientation
 
 
 class UserData(BaseModel):
-    step: Step = Step.START
+    from_format: str = ""
+    to_format: str = ""
     images: list[bytes] = Field(default_factory=list)
     orientation: Orientation = Orientation.PORTRAIT
