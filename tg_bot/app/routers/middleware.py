@@ -3,10 +3,10 @@ from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
-from converter.services.converter import ConverterService
+from tg_bot.app.services.converter import ConverterService
 
 
-class ConvertMiddleware(BaseMiddleware):
+class ServiceMiddleware(BaseMiddleware):
     def __init__(self, convert_service: ConverterService):
         super().__init__()
         self.convert_service = convert_service

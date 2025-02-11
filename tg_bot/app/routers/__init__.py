@@ -4,10 +4,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, ReplyKeyboardMarkup, KeyboardButton
 from pydantic import TypeAdapter
 
-from converter import entity
-from converter.services.converter import ConverterService
+from tg_bot.app import entity
+from tg_bot.app.services.converter import ConverterService
 
 router = Router()
+orientation = entity.Orientation()
 
 
 @router.message(CommandStart())
@@ -44,9 +45,9 @@ async def start_conversion(message: types.Message, state: FSMContext):
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=entity.Button.LANDSCAPE.value),
-                KeyboardButton(text=entity.Button.PORTRAIT.value),
-                KeyboardButton(text=entity.Button.MIX.value),
+                KeyboardButton(text=orientation.LANDSCAPE),
+                KeyboardButton(text=orientation.PORTRAIT),
+                KeyboardButton(text=orientation.MIX),
             ]
         ],
         resize_keyboard=True,
@@ -74,9 +75,9 @@ async def collect_images(message: types.Message, state: FSMContext, convert_serv
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=entity.Button.LANDSCAPE.value),
-                KeyboardButton(text=entity.Button.PORTRAIT.value),
-                KeyboardButton(text=entity.Button.MIX.value),
+                KeyboardButton(text=orientation.LANDSCAPE),
+                KeyboardButton(text=orientation.PORTRAIT),
+                KeyboardButton(text=orientation.MIX),
             ]
         ],
         resize_keyboard=True,
@@ -89,7 +90,7 @@ async def collect_images(message: types.Message, state: FSMContext, convert_serv
 
 
 @router.message(
-    F.text.in_([entity.Orientation.LANDSCAPE.value, entity.Orientation.PORTRAIT.value, entity.Orientation.MIX.value]),
+    F.text.in_([orientation.LANDSCAPE, orientation.PORTRAIT, orientation.MIX]),
     StateFilter(entity.UserState.UPLOADING, entity.UserState.CHOOSE_TO),
 )
 async def create_pdf(message: types.Message, state: FSMContext, convert_service: ConverterService):
@@ -99,7 +100,7 @@ async def create_pdf(message: types.Message, state: FSMContext, convert_service:
         await message.answer("❌ Ты не отправил ни одного изображения!")
         return
 
-    _state.orientation = entity.Orientation(message.text)
+    _state.orientation = message.text
     pdf_bytes = await convert_service.from_jpg_to_pdf(_state.orientation, _state.images)
 
     keyboard = ReplyKeyboardMarkup(

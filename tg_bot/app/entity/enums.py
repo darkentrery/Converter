@@ -1,5 +1,7 @@
 import enum
 
+from pydantic import BaseModel
+
 
 class Button(enum.Enum):
     LPG_TO_PDF: str = "Конвертация JPG to PDF"
@@ -9,7 +11,7 @@ class Button(enum.Enum):
     MIX: str = "Формат в зависимости от размера изображений"
 
 
-class Orientation(enum.Enum):
+class Orientation(BaseModel):
     PORTRAIT: str = "Книжный"
     LANDSCAPE: str = "Альбомный"
     MIX: str = "Формат в зависимости от размера изображений"
