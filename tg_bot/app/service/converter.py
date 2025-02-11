@@ -4,8 +4,8 @@ from PIL import Image
 from aiogram import Bot
 from aiogram.types import Message
 
-from tg_bot.app import entity
-from tg_bot.app.config import config
+from app import entity
+from app.config import config
 
 
 class ConverterService:

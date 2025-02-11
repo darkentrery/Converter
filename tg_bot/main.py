@@ -10,7 +10,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from app.config import config
 from app.routers import router
 from app.routers.middleware import ServiceMiddleware
-from app.services.converter import ConverterService
+from app.service.converter import ConverterService
 
 
 def get_dispatcher(bot: Bot, storage: BaseStorage) -> Dispatcher:

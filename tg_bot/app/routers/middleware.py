@@ -3,7 +3,7 @@ from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
-from tg_bot.app.services.converter import ConverterService
+from app.service.converter import ConverterService
 
 
 class ServiceMiddleware(BaseMiddleware):

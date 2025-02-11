@@ -4,8 +4,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, ReplyKeyboardMarkup, KeyboardButton
 from pydantic import TypeAdapter
 
-from tg_bot.app import entity
-from tg_bot.app.services.converter import ConverterService
+from app import entity
+from app.service.converter import ConverterService
 
 router = Router()
 orientation = entity.Orientation()
