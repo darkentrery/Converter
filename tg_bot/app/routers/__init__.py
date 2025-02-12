@@ -9,7 +9,6 @@ from app.service import ConverterService, ApiService
 from app.utils.keybord import get_markup_keyboard
 
 router = Router()
-orientation = entity.Orientation()
 
 
 @router.message(CommandStart())
@@ -40,7 +39,11 @@ async def choose_from_format(message: types.Message, state: FSMContext, api_serv
     entity.UserState.CHOOSE_FROM
 )
 async def start_conversion(message: types.Message, state: FSMContext):
-    keyboard = get_markup_keyboard([orientation.LANDSCAPE, orientation.PORTRAIT, orientation.MIX])
+    keyboard = get_markup_keyboard([
+        entity.Orientation.LANDSCAPE.value,
+        entity.Orientation.PORTRAIT.value,
+        entity.Orientation.MIX.value
+    ])
     _state = TypeAdapter(entity.UserData).validate_python((await state.get_data()))
     _state.to_format = message.text
     await state.update_data(_state.model_dump())
@@ -61,7 +64,11 @@ async def collect_images(message: types.Message, state: FSMContext, convert_serv
     await state.update_data(_state.model_dump())
     await state.set_state(entity.UserState.UPLOADING)
 
-    keyboard = get_markup_keyboard([orientation.LANDSCAPE, orientation.PORTRAIT, orientation.MIX])
+    keyboard = get_markup_keyboard([
+        entity.Orientation.LANDSCAPE.value,
+        entity.Orientation.PORTRAIT.value,
+        entity.Orientation.MIX.value
+    ])
     await message.answer(
         "✅ Изображение добавлено! Отправь ещё или выберите ориентацию страниц для конвертации.",
         reply_markup=keyboard
@@ -69,10 +76,10 @@ async def collect_images(message: types.Message, state: FSMContext, convert_serv
 
 
 @router.message(
-    F.text.in_([orientation.LANDSCAPE, orientation.PORTRAIT, orientation.MIX]),
+    F.text.in_([entity.Orientation.LANDSCAPE.value, entity.Orientation.PORTRAIT.value, entity.Orientation.MIX.value]),
     StateFilter(entity.UserState.UPLOADING, entity.UserState.CHOOSE_TO),
 )
-async def create_pdf(message: types.Message, state: FSMContext, convert_service: ConverterService, api_service: ApiService):
+async def create_pdf(message: types.Message, state: FSMContext, api_service: ApiService):
     """Создаёт PDF из всех загруженных изображений после выбора ориентации."""
     _state = TypeAdapter(entity.UserData).validate_python((await state.get_data()))
     if not _state.images:
@@ -80,7 +87,11 @@ async def create_pdf(message: types.Message, state: FSMContext, convert_service:
         return
 
     _state.orientation = message.text
-    pdf_bytes = await convert_service.from_jpg_to_pdf(_state.orientation, _state.images)
+    pdf_bytes = await api_service.convert(
+        _state.from_format,
+        _state.to_format,
+        _state.model_dump(include={"orientation", "images"})
+    )
 
     formats = await api_service.get_formats()
     keyboard = get_markup_keyboard([format.name for format in formats])

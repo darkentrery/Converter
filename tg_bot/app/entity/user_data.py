@@ -32,6 +32,6 @@ class UserData(BaseModel):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
-        data = super().model_dump()
+        data = super().model_dump(include=include, exclude=exclude)
         data["images"] = [base64.b64encode(image).decode("utf-8") for image in data["images"]]
         return data

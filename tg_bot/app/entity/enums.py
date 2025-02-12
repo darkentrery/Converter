@@ -11,7 +11,7 @@ class Button(enum.Enum):
     MIX: str = "Формат в зависимости от размера изображений"
 
 
-class Orientation(BaseModel):
+class Orientation(enum.Enum):
     PORTRAIT: str = "Книжный"
     LANDSCAPE: str = "Альбомный"
     MIX: str = "Формат в зависимости от размера изображений"

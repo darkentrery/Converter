@@ -1,3 +1,5 @@
+import io
+
 from httpx import AsyncClient, Response
 from pydantic import TypeAdapter
 
@@ -19,6 +21,12 @@ class ApiService:
         # async with self.api_client:
         res = await self.get(f"/formats/{format_name}/cross/")
         return TypeAdapter(list[entity.FormatCrossWithName]).validate_python(res.json())
+
+    async def convert(self, format_from: str, format_to: str, body: dict) -> bytes:
+        res = await self.post(f"/converters/from_{format_from}_to_{format_to}", body)
+        file_bytes = io.BytesIO(res.read())
+        file_bytes.seek(0)
+        return file_bytes.getvalue()
 
     def call_api(method):
         async def wrapper(self, *args, **kwargs) -> Response:

@@ -25,4 +25,5 @@ def get_service(srv_class):
 # PaginationDep = t.Annotated[Pagination, fastapi.Depends(Pagination)]
 UserServiceDep = t.Annotated[service.UserService, fastapi.Depends(get_service(service.UserService))]
 FormatServiceDep = t.Annotated[service.FormatService, fastapi.Depends(get_service(service.FormatService))]
+ConverterServiceDep = t.Annotated[service.ConverterService, fastapi.Depends(get_service(service.ConverterService))]
 

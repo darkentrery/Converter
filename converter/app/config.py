@@ -17,6 +17,9 @@ class Config(BaseSettings):
     database_port: int = Field(alias="POSTGRES_PORT")
     database_name: str = Field(alias="POSTGRES_DB")
 
+    A4_PORTRAIT: tuple[int, int] = (595, 842)  # Размер A4 в пикселях (72 DPI)
+    A4_LANDSCAPE: tuple[int, int] = (842, 595)
+
     cors_origins: str | list[str]
 
     is_test: bool | None = None
