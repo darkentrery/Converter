@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic import SecretStr, field_validator, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -31,6 +33,10 @@ class Config(BaseSettings):
             f"{self.database_username}:{self.database_password.get_secret_value()}"
             f"@{self.database_host}:{self.database_port}/{self.database_name}"
         )
+
+    @property
+    def base_dir(self) -> str:
+        return str(Path(__file__).resolve().parents[1])
 
 
 config = Config()

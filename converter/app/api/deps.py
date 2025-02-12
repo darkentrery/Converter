@@ -23,5 +23,6 @@ def get_service(srv_class):
 
 
 # PaginationDep = t.Annotated[Pagination, fastapi.Depends(Pagination)]
-# RackServiceDep = t.Annotated[service.RackService, fastapi.Depends(get_service(service.RackService))]
+UserServiceDep = t.Annotated[service.UserService, fastapi.Depends(get_service(service.UserService))]
+FormatServiceDep = t.Annotated[service.FormatService, fastapi.Depends(get_service(service.FormatService))]
 
