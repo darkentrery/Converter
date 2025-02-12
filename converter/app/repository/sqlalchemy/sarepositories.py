@@ -23,7 +23,7 @@ class FormatCrossRepository(SARepository):
     model = models.FormatCross
     schema = entity.FormatCross
 
-    async def find_cross_by_format_id(self, format_id: int) -> list[entity.FormatCrossWithName]:
+    async def find_cross_by_format_name(self, format_name: str) -> list[entity.FormatCrossWithName]:
         from_format = aliased(models.Format)
         to_format = aliased(models.Format)
         stmt = select(
@@ -39,7 +39,7 @@ class FormatCrossRepository(SARepository):
         ).join(
             to_format, to_format.id == self.model.format_to_id
         ).filter(
-            self.model.format_from_id == format_id
+            from_format.name == format_name
         )
         rows = (await self.session.execute(stmt)).all()
         return TypeAdapter(list[entity.FormatCrossWithName]).validate_python(rows)

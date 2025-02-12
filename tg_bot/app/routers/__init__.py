@@ -5,34 +5,29 @@ from aiogram.types import BufferedInputFile, ReplyKeyboardMarkup, KeyboardButton
 from pydantic import TypeAdapter
 
 from app import entity
-from app.service.converter import ConverterService
+from app.service import ConverterService, ApiService
+from app.utils.keybord import get_markup_keyboard
 
 router = Router()
 orientation = entity.Orientation()
 
 
 @router.message(CommandStart())
-async def start_handler(message: types.Message, state: FSMContext):
+async def start_handler(message: types.Message, state: FSMContext, api_service: ApiService):
+    formats = await api_service.get_formats()
     await state.set_data(entity.UserData().model_dump())
     await state.set_state(entity.UserState.START)
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=name) for name in ["jpg"]]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=False
-    )
+    keyboard = get_markup_keyboard([format.name for format in formats])
     await message.answer("Привет! Выбери формат загружаемого файла:", reply_markup=keyboard)
 
 
-@router.message(F.text.in_(["jpg"]), entity.UserState.START)
-async def choose_from_format(message: types.Message, state: FSMContext):
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=name) for name in ["pdf"]]
-        ],
-        resize_keyboard=True
-    )
+@router.message(
+    # F.text.in_(["jpg"]),
+    entity.UserState.START
+)
+async def choose_from_format(message: types.Message, state: FSMContext, api_service: ApiService):
+    formats = await api_service.get_cross_formats_by_format_name(message.text)
+    keyboard = get_markup_keyboard([format.format_to_name for format in formats])
     _state = TypeAdapter(entity.UserData).validate_python((await state.get_data()))
     _state.from_format = message.text
     await state.update_data(_state.model_dump())
@@ -40,19 +35,12 @@ async def choose_from_format(message: types.Message, state: FSMContext):
     await message.answer("Выбери формат желаемого файла", reply_markup=keyboard)
 
 
-@router.message(F.text.in_(["pdf"]), entity.UserState.CHOOSE_FROM)
+@router.message(
+    # F.text.in_(["pdf"]),
+    entity.UserState.CHOOSE_FROM
+)
 async def start_conversion(message: types.Message, state: FSMContext):
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text=orientation.LANDSCAPE),
-                KeyboardButton(text=orientation.PORTRAIT),
-                KeyboardButton(text=orientation.MIX),
-            ]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
+    keyboard = get_markup_keyboard([orientation.LANDSCAPE, orientation.PORTRAIT, orientation.MIX])
     _state = TypeAdapter(entity.UserData).validate_python((await state.get_data()))
     _state.to_format = message.text
     await state.update_data(_state.model_dump())
@@ -72,17 +60,8 @@ async def collect_images(message: types.Message, state: FSMContext, convert_serv
     _state.images.append(img_bytes)
     await state.update_data(_state.model_dump())
     await state.set_state(entity.UserState.UPLOADING)
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text=orientation.LANDSCAPE),
-                KeyboardButton(text=orientation.PORTRAIT),
-                KeyboardButton(text=orientation.MIX),
-            ]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
+
+    keyboard = get_markup_keyboard([orientation.LANDSCAPE, orientation.PORTRAIT, orientation.MIX])
     await message.answer(
         "✅ Изображение добавлено! Отправь ещё или выберите ориентацию страниц для конвертации.",
         reply_markup=keyboard
@@ -93,7 +72,7 @@ async def collect_images(message: types.Message, state: FSMContext, convert_serv
     F.text.in_([orientation.LANDSCAPE, orientation.PORTRAIT, orientation.MIX]),
     StateFilter(entity.UserState.UPLOADING, entity.UserState.CHOOSE_TO),
 )
-async def create_pdf(message: types.Message, state: FSMContext, convert_service: ConverterService):
+async def create_pdf(message: types.Message, state: FSMContext, convert_service: ConverterService, api_service: ApiService):
     """Создаёт PDF из всех загруженных изображений после выбора ориентации."""
     _state = TypeAdapter(entity.UserData).validate_python((await state.get_data()))
     if not _state.images:
@@ -103,13 +82,8 @@ async def create_pdf(message: types.Message, state: FSMContext, convert_service:
     _state.orientation = message.text
     pdf_bytes = await convert_service.from_jpg_to_pdf(_state.orientation, _state.images)
 
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=name) for name in ["jpg"]]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=False
-    )
+    formats = await api_service.get_formats()
+    keyboard = get_markup_keyboard([format.name for format in formats])
 
     await state.update_data(entity.UserData().model_dump())
     await state.set_state(entity.UserState.START)
