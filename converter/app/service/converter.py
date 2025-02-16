@@ -91,3 +91,25 @@ class ConverterService:
 
         pdf_stream.seek(0)
         return pdf_stream
+
+    def from_html_to_pdf(self, files: list[bytes]) -> io.BytesIO:
+        """Конвертирует Html (bytes) в PDF (bytes)"""
+        html_content = files[0].decode('utf-8')
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_pdf_file:
+            temp_pdf_path = temp_pdf_file.name
+
+        options = {
+            "page-size": "A4",
+            "encoding": "UTF-8",
+            "no-outline": None
+        }
+
+        pdfkit.from_string(html_content, temp_pdf_path, options=options)
+        with open(temp_pdf_path, 'rb') as f:
+            pdf_stream = io.BytesIO(f.read())
+
+        os.remove(temp_pdf_path)
+
+        pdf_stream.seek(0)
+        return pdf_stream

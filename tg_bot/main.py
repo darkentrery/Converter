@@ -11,8 +11,7 @@ from httpx import AsyncClient, Timeout
 from app.config import config
 from app.routers import router
 from app.routers.middleware import ServiceMiddleware
-from app.service.api import ApiService
-from app.service.converter import ConverterService
+from app.service import ApiService, ConverterService, StateService
 
 
 def get_dispatcher(bot: Bot, storage: BaseStorage) -> Dispatcher:
@@ -24,8 +23,10 @@ def get_dispatcher(bot: Bot, storage: BaseStorage) -> Dispatcher:
         pool=60.0
     )
     api_servie = ApiService(AsyncClient(timeout=timeout))
+    state_service = StateService()
     dp = Dispatcher(storage=storage)
-    dp.message.middleware(ServiceMiddleware(convert_service, api_servie))
+    dp.message.middleware(ServiceMiddleware(convert_service, api_servie, state_service))
+    dp.callback_query.middleware(ServiceMiddleware(convert_service, api_servie, state_service))
     logging.basicConfig(level=logging.INFO)
     dp.include_routers(router)
     return dp

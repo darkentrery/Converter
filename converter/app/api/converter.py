@@ -35,3 +35,13 @@ async def from_excel_to_pdf(service: deps.ConverterServiceDep, body: entity.Conv
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=converted.pdf"}
     )
+
+
+@router.post("/from-html-to-pdf")
+async def from_html_to_pdf(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_html_to_pdf(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=converted.pdf"}
+    )
