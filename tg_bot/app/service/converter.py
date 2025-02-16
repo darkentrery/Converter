@@ -47,3 +47,22 @@ class ConverterService:
         await self.bot.download_file(file.file_path, img_bytes)
         img_bytes.seek(0)
         return base64.b64encode(img_bytes.getvalue()).decode("utf-8")
+
+    async def check_message_by_format(self, message: Message, from_format: str) -> bool:
+        check = False
+        match from_format:
+            case "jpg":
+                if message.photo or message.document.mime_type.startswith("image/"):
+                    check = True
+            case "word":
+                if message.document.file_name.endswith(".docx"):
+                    check = True
+            case "excel":
+                if message.document.file_name.endswith(".xlsx"):
+                    check = True
+            case "html":
+                if message.document.file_name.endswith(".html"):
+                    check = True
+            case _:
+                check = False
+        return check
