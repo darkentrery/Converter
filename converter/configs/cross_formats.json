@@ -2,5 +2,13 @@
   {
     "format_from_name": "jpg",
     "format_to_name": "pdf"
+  },
+  {
+    "format_from_name": "word",
+    "format_to_name": "pdf"
+  },
+  {
+    "format_from_name": "excel",
+    "format_to_name": "pdf"
   }
 ]

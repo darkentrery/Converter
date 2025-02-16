@@ -1,7 +1,7 @@
 from app.entity.user import User, AddUser
 from app.entity.format import Format
 from app.entity.format_cross import FormatCross, FormatCrossWithName
-from app.entity.converter import FromJpgToPdf
+from app.entity.converter import ConvertRequest
 from app.entity.enums import Orientation
 
 __all__ = [
@@ -10,6 +10,6 @@ __all__ = [
     "Format",
     "FormatCross",
     "FormatCrossWithName",
-    "FromJpgToPdf",
+    "ConvertRequest",
     "Orientation",
 ]

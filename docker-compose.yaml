@@ -1,6 +1,21 @@
 version: '3.9'
 
 services:
+  app:
+    container_name: app_converter
+    build:
+      context: .
+      dockerfile: converter/Dockerfile
+#    command: python3 main.py
+    volumes:
+      - ./converter:/home/appuser
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env
+
   postgres:
     image: postgres:latest
     container_name: postgres_converter

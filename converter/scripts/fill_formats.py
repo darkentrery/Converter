@@ -12,7 +12,6 @@ async def fill_formats(uow: SAUnitOfWork) -> None:
     with open(os.path.join(config.base_dir, "configs", "formats.json"), "r") as f:
         data = json.load(f)
 
-    await uow.format.delete({})
     await uow.format.bulk_add(data)
 
 
@@ -22,7 +21,6 @@ async def fill_cross_formats(uow: SAUnitOfWork) -> None:
         data = json.load(f)
     cross_formats = []
 
-    await uow.format_cross.delete({})
     for row in data:
         format_from = await uow.format.find({"name": row["format_from_name"]})
         format_to = await uow.format.find({"name": row["format_to_name"]})
@@ -36,6 +34,9 @@ async def fill_cross_formats(uow: SAUnitOfWork) -> None:
 async def main() -> None:
     uow = SAUnitOfWork(pg_async_session_maker)
     async with uow:
+        await uow.format_cross.delete({})
+        await uow.format.delete({})
+        await fill_formats(uow)
         await fill_cross_formats(uow)
         await uow.commit()
 
