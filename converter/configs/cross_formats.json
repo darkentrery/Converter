@@ -8,6 +8,10 @@
     "format_to_name": "pdf"
   },
   {
+    "format_from_name": "powerpoint",
+    "format_to_name": "pdf"
+  },
+  {
     "format_from_name": "excel",
     "format_to_name": "pdf"
   },

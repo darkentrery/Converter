@@ -68,6 +68,32 @@ class ConverterService:
 
         return io.BytesIO(pdf_bytes)
 
+    def from_powerpoint_to_pdf(self, files: list[bytes]) -> io.BytesIO:
+        """Конвертирует Word (docx) в PDF используя LibreOffice (без сохранения на диск)"""
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pptx") as temp_docx:
+            temp_docx.write(files[0])
+            temp_docx.flush()
+            temp_docx_path = Path(temp_docx.name)
+
+        output_pdf_path = temp_docx_path.with_suffix(".pdf")
+
+        # Запускаем LibreOffice для конвертации
+        subprocess.run([
+            "libreoffice", "--headless", "--convert-to", "pdf",
+            str(temp_docx_path), "--outdir", str(temp_docx_path.parent)
+        ], check=True)
+
+        # Читаем PDF в память
+        with open(output_pdf_path, "rb") as pdf_file:
+            pdf_bytes = pdf_file.read()
+
+        # Удаляем временные файлы
+        temp_docx_path.unlink(missing_ok=True)
+        output_pdf_path.unlink(missing_ok=True)
+
+        return io.BytesIO(pdf_bytes)
+
     def from_excel_to_pdf(self, files: list[bytes]) -> io.BytesIO:
         """Конвертирует Excel (bytes) в PDF (bytes)"""
         excel_stream = io.BytesIO(files[0])
