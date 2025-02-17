@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+
 from app.entity.mixins import IdMixin, DateTimeMixin
 
 
@@ -8,7 +10,7 @@ class User(IdMixin, DateTimeMixin):
     tg_id: int | None
 
 
-class AddUser(IdMixin, DateTimeMixin):
+class AddUser(BaseModel):
     username: str
     first_name: str
     last_name: str

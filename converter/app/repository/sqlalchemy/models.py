@@ -2,6 +2,7 @@ import sqlalchemy as sa
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
 
+from app.entity import ActionType
 from app.repository.sqlalchemy.mixins import IdMixin, TimestampMixin
 
 
@@ -20,6 +21,14 @@ class User(IdMixin, TimestampMixin, BaseModel):
     __table_args__ = (
         sa.UniqueConstraint("username", "tg_id", name="users_unique_key"),
     )
+
+
+class UserAction(IdMixin, TimestampMixin, BaseModel):
+    __tablename__ = "user_actions"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    action_type: Mapped[ActionType] = mapped_column(default=ActionType.START, server_default="START", nullable=False)
+    comment: Mapped[str] = mapped_column(nullable=True)
 
 
 class Format(IdMixin, TimestampMixin, BaseModel):

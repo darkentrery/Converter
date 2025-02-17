@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from starlette.middleware.cors import CORSMiddleware
 
 from app import version, exc, entity
-from app.api import format, user, converter
+from app.api import format, user, converter, user_action
 from app.config import config
 from app.logger import logger
 
@@ -45,7 +45,7 @@ def create_app(is_test: bool = False) -> FastAPI:
             status_code=code,
         )
 
-    for dep in [format, user, converter]:
+    for dep in [format, user, user_action, converter]:
         router = getattr(dep, 'router')
         app.include_router(router, prefix=f'/{version.APP_NAME}/v1')
 

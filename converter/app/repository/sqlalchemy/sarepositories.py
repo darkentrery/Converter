@@ -12,6 +12,12 @@ class UserRepository(SARepository):
     schema = entity.User
 
 
+class UserActionRepository(SARepository):
+    name = "UserAction"
+    model = models.UserAction
+    schema = entity.UserAction
+
+
 class FormatRepository(SARepository):
     name = "Format"
     model = models.Format

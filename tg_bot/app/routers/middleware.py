@@ -2,9 +2,9 @@ import traceback
 from typing import Callable, Dict, Any, Awaitable, Union
 
 from aiogram import BaseMiddleware
-from aiogram.types import Message, CallbackQuery, Update
+from aiogram.types import Message, CallbackQuery
 
-from app import exc
+from app import exc, entity
 from app.logger import logger
 from app.service import ApiService, ConverterService, StateService
 
@@ -26,7 +26,20 @@ class ServiceMiddleware(BaseMiddleware):
         data["api_service"] = self.api_service
         self.state_service.set_context(data.get("state"))
         data["state_service"] = self.state_service
+        data["user"] = await self.get_or_create_user(event)
         return await handler(event, data)
+
+    async def get_or_create_user(self, event: Union[Message, CallbackQuery]) -> entity.User:
+        try:
+            user = await self.api_service.get_user_by_tg_id(event.from_user.id)
+        except exc.NotFoundError:
+            user = await self.api_service.create_user(entity.AddUser(
+                username=event.from_user.username,
+                last_name=event.from_user.last_name,
+                first_name=event.from_user.first_name,
+                tg_id=event.from_user.id
+            ))
+        return user
 
 
 class ErrorMiddleware(BaseMiddleware):

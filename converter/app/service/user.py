@@ -16,3 +16,8 @@ class UserService:
         async with self.uow:
             user = await self.uow.user.find({"id": user_id})
             return user
+
+    async def get_by_tg_id(self, tg_id: int) -> entity.User:
+        async with self.uow:
+            user = await self.uow.user.find({"tg_id": tg_id})
+            return user

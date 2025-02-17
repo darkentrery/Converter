@@ -17,6 +17,7 @@ class SAUnitOfWork(repository.AbstractUnitOfWork):
         self.session = self.session_factory()
 
         self.user = sarepositories.UserRepository(self.session)
+        self.user_action = sarepositories.UserActionRepository(self.session)
         self.format = sarepositories.FormatRepository(self.session)
         self.format_cross = sarepositories.FormatCrossRepository(self.session)
 

@@ -15,11 +15,16 @@ lock = asyncio.Lock()
 
 @router.message(CommandStart())
 @router.message(F.text == "Меню")
-async def start_handler(message: types.Message, api_service: ApiService, state_service: StateService):
+async def start_handler(message: types.Message, api_service: ApiService, state_service: StateService, user: entity.User):
     formats = await api_service.get_formats_with_pair()
     await state_service.set_default()
     await state_service.set_state(entity.UserState.START)
     keyboard = get_inline_keyboard([format.name for format in formats])
+    await api_service.create_user_action(entity.AddUserAction(
+        user_id=user.id,
+        action_type=entity.ActionType.START,
+        comment=None
+    ))
     await message.answer("Привет! Выбери формат загружаемого файла:", reply_markup=keyboard)
     await message.answer(".", reply_markup=get_markup_keyboard(["Меню"]))
 
@@ -27,11 +32,16 @@ async def start_handler(message: types.Message, api_service: ApiService, state_s
 @router.callback_query(
     entity.UserState.START
 )
-async def choose_from_format(callback: CallbackQuery, api_service: ApiService, state_service: StateService):
+async def choose_from_format(callback: CallbackQuery, api_service: ApiService, state_service: StateService, user: entity.User):
     formats = await api_service.get_cross_formats_by_format_name(callback.data)
     keyboard = get_inline_keyboard([format.format_to_name for format in formats])
     await state_service.set_from_format(callback.data)
     await state_service.set_state(entity.UserState.CHOOSE_FROM)
+    await api_service.create_user_action(entity.AddUserAction(
+        user_id=user.id,
+        action_type=entity.ActionType.CHOOSE_FROM,
+        comment=callback.data
+    ))
     await callback.message.answer("Выбери формат желаемого файла", reply_markup=keyboard)
     await callback.answer()
 
@@ -39,7 +49,7 @@ async def choose_from_format(callback: CallbackQuery, api_service: ApiService, s
 @router.callback_query(
     entity.UserState.CHOOSE_FROM
 )
-async def choose_to_format(callback: CallbackQuery, api_service: ApiService, state_service: StateService):
+async def choose_to_format(callback: CallbackQuery, api_service: ApiService, state_service: StateService, user: entity.User):
     format_from = await state_service.from_format
     formats = await api_service.get_cross_formats_by_format_name(format_from)
     if callback.data not in [format.format_to_name for format in formats]:
@@ -49,6 +59,11 @@ async def choose_to_format(callback: CallbackQuery, api_service: ApiService, sta
     keyboard = get_inline_keyboard_by_from_format((await state_service.from_format))
     await state_service.set_to_format(callback.data)
     await state_service.set_state(entity.UserState.CHOOSE_TO)
+    await api_service.create_user_action(entity.AddUserAction(
+        user_id=user.id,
+        action_type=entity.ActionType.CHOOSE_TO,
+        comment=callback.data
+    ))
     await callback.message.answer("Отправь изображения для конвертации в PDF.", reply_markup=keyboard)
     await callback.answer()
 
@@ -66,7 +81,13 @@ async def choose_to_format(callback: CallbackQuery, api_service: ApiService, sta
      ),
     StateFilter(entity.UserState.CHOOSE_TO),
 )
-async def collect_files(message: types.Message, convert_service: ConverterService, state_service: StateService):
+async def collect_files(
+        message: types.Message,
+        api_service: ApiService,
+        convert_service: ConverterService,
+        state_service: StateService,
+        user: entity.User
+):
     """Сохраняет изображения в список для текущего пользователя."""
     async with lock:
         from_format = await state_service.from_format
@@ -79,6 +100,12 @@ async def collect_files(message: types.Message, convert_service: ConverterServic
         await state_service.add_file(file)
 
         keyboard = get_inline_keyboard_by_from_format(from_format)
+
+        await api_service.create_user_action(entity.AddUserAction(
+            user_id=user.id,
+            action_type=entity.ActionType.UPLOADING,
+            comment=None
+        ))
         await message.answer(
             "✅ Изображение добавлено! Отправь ещё или выберите ориентацию страниц для конвертации.",
             reply_markup=keyboard
@@ -94,7 +121,7 @@ async def collect_files(message: types.Message, convert_service: ConverterServic
     ]),
     StateFilter(entity.UserState.CHOOSE_TO),
 )
-async def convert_files(callback: CallbackQuery, api_service: ApiService, state_service: StateService):
+async def convert_files(callback: CallbackQuery, api_service: ApiService, state_service: StateService, user: entity.User):
     """Создаёт PDF из всех загруженных изображений после выбора ориентации."""
     if not (await state_service.files):
         await callback.answer("❌ Ты не отправил ни одного файла!")
@@ -114,6 +141,11 @@ async def convert_files(callback: CallbackQuery, api_service: ApiService, state_
     await state_service.set_default()
     orientation = f" (Ориентация: {state.orientation})" if state.orientation else ""
 
+    await api_service.create_user_action(entity.AddUserAction(
+        user_id=user.id,
+        action_type=entity.ActionType.GOT_RESULT,
+        comment=None
+    ))
     await callback.message.answer_document(
         BufferedInputFile(pdf_bytes, filename="converted.pdf"),
         caption=f"📄 Твой PDF готов!" + orientation,

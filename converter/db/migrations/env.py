@@ -4,7 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-# import alembic_postgresql_enum
+import alembic_postgresql_enum
 
 from app.repository.sqlalchemy import models
 

@@ -31,6 +31,18 @@ class ApiService:
         file_bytes.seek(0)
         return file_bytes.getvalue()
 
+    async def get_user_by_tg_id(self, tg_id: int) -> entity.User:
+        res = await self.get(f"/users/by-tg/{tg_id}")
+        return TypeAdapter(entity.User).validate_python(res.json())
+
+    async def create_user(self, body: entity.AddUser) -> entity.User:
+        res = await self.post("/users/", body.model_dump())
+        return TypeAdapter(entity.User).validate_python(res.json())
+
+    async def create_user_action(self, body: entity.AddUserAction) -> entity.UserAction:
+        res = await self.post("/user-actions/", body.model_dump())
+        return TypeAdapter(entity.UserAction).validate_python(res.json())
+
     def call_api(method: Callable):
         async def wrapper(self, *args, **kwargs) -> Response:
             res: Response = await method(self, *args, **kwargs)
