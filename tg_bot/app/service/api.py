@@ -17,6 +17,10 @@ class ApiService:
         res = await self.get("/formats/")
         return TypeAdapter(list[entity.Format]).validate_python(res.json())
 
+    async def get_formats_with_pair(self) -> list[entity.Format]:
+        res = await self.get("/formats/with-pair/")
+        return TypeAdapter(list[entity.Format]).validate_python(res.json())
+
     async def get_cross_formats_by_format_name(self, format_name: str) -> list[entity.FormatCrossWithName]:
         res = await self.get(f"/formats/{format_name}/cross/")
         return TypeAdapter(list[entity.FormatCrossWithName]).validate_python(res.json())

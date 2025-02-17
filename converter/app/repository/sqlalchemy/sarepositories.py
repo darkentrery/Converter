@@ -17,6 +17,15 @@ class FormatRepository(SARepository):
     model = models.Format
     schema = entity.Format
 
+    async def get_formats_with_pair(self) -> list[entity.Format]:
+        stmt = select(
+            self.model
+        ).join(
+            models.FormatCross, models.FormatCross.format_from_id == self.model.id
+        )
+        rows = (await self.session.execute(stmt)).scalars().all()
+        return TypeAdapter(list[entity.Format]).validate_python(rows)
+
 
 class FormatCrossRepository(SARepository):
     name = "FormatCross"

@@ -15,3 +15,8 @@ class FormatService:
         async with self.uow:
             items = await self.uow.format_cross.find_cross_by_format_name(format_name)
             return items
+
+    async def get_formats_with_pair(self) -> list[entity.Format]:
+        async with self.uow:
+            items = await self.uow.format.get_formats_with_pair()
+            return items
