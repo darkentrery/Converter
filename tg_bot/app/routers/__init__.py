@@ -75,7 +75,8 @@ async def choose_to_format(callback: CallbackQuery, api_service: ApiService, sta
         F.document.file_name.endswith(".docx") |
         F.document.file_name.endswith(".pptx") |
         F.document.file_name.endswith(".xlsx") |
-        F.document.file_name.endswith(".html")
+        F.document.file_name.endswith(".html") |
+        F.document.file_name.endswith(".txt")
       )
       )
      ),

@@ -18,5 +18,9 @@
   {
     "format_from_name": "html",
     "format_to_name": "pdf"
+  },
+  {
+    "format_from_name": "txt",
+    "format_to_name": "pdf"
   }
 ]

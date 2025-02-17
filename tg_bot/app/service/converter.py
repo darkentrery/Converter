@@ -38,6 +38,9 @@ class ConverterService:
             case "html":
                 if message.document.file_name.endswith(".html"):
                     check = True
+            case "txt":
+                if message.document.file_name.endswith(".txt"):
+                    check = True
             case _:
                 check = False
         return check

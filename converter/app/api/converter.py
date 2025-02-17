@@ -55,3 +55,13 @@ async def from_html_to_pdf(service: deps.ConverterServiceDep, body: entity.Conve
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=converted.pdf"}
     )
+
+
+@router.post("/from-txt-to-pdf")
+async def from_txt_to_pdf(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_txt_to_pdf(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=converted.pdf"}
+    )
