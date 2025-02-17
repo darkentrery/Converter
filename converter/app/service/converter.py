@@ -7,9 +7,12 @@ from pathlib import Path
 import pandas as pd
 import pdfkit
 from PIL import Image
+from docx import Document
+from docx.shared import Inches
 
 from app import entity
 from app.config import config
+from app.logger import logger
 from app.repository.sqlalchemy import SAUnitOfWork
 
 
@@ -43,71 +46,29 @@ class ConverterService:
             return entity.Orientation.PORTRAIT.value
 
     def from_word_to_pdf(self, files: list[bytes]) -> io.BytesIO:
-        """Конвертирует Word (docx) в PDF используя LibreOffice (без сохранения на диск)"""
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_docx:
-            temp_docx.write(files[0])
-            temp_docx.flush()
-            temp_docx_path = Path(temp_docx.name)
-
-        output_pdf_path = temp_docx_path.with_suffix(".pdf")
-
-        # Запускаем LibreOffice для конвертации
-        subprocess.run([
-            "libreoffice", "--headless", "--convert-to", "pdf",
-            str(temp_docx_path), "--outdir", str(temp_docx_path.parent)
-        ], check=True)
-
-        # Читаем PDF в память
-        with open(output_pdf_path, "rb") as pdf_file:
-            pdf_bytes = pdf_file.read()
-
-        # Удаляем временные файлы
-        temp_docx_path.unlink(missing_ok=True)
-        output_pdf_path.unlink(missing_ok=True)
-
-        return io.BytesIO(pdf_bytes)
+        return self._convert_by_libreoffice(files, ".docs")
 
     def from_powerpoint_to_pdf(self, files: list[bytes]) -> io.BytesIO:
-        """Конвертирует Word (docx) в PDF используя LibreOffice (без сохранения на диск)"""
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pptx") as temp_docx:
-            temp_docx.write(files[0])
-            temp_docx.flush()
-            temp_docx_path = Path(temp_docx.name)
-
-        output_pdf_path = temp_docx_path.with_suffix(".pdf")
-
-        # Запускаем LibreOffice для конвертации
-        subprocess.run([
-            "libreoffice", "--headless", "--convert-to", "pdf",
-            str(temp_docx_path), "--outdir", str(temp_docx_path.parent)
-        ], check=True)
-
-        # Читаем PDF в память
-        with open(output_pdf_path, "rb") as pdf_file:
-            pdf_bytes = pdf_file.read()
-
-        # Удаляем временные файлы
-        temp_docx_path.unlink(missing_ok=True)
-        output_pdf_path.unlink(missing_ok=True)
-
-        return io.BytesIO(pdf_bytes)
+        return self._convert_by_libreoffice(files, ".pptx")
 
     def from_txt_to_pdf(self, files: list[bytes]) -> io.BytesIO:
-        """Конвертирует Word (docx) в PDF используя LibreOffice (без сохранения на диск)"""
+        return self._convert_by_libreoffice(files, ".txt")
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_docx:
-            temp_docx.write(files[0])
-            temp_docx.flush()
-            temp_docx_path = Path(temp_docx.name)
+    def _convert_by_libreoffice(self, files: list[bytes], suffix: str) -> io.BytesIO:
+        """Конвертирует документ в PDF используя LibreOffice (без сохранения на диск)"""
 
-        output_pdf_path = temp_docx_path.with_suffix(".pdf")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            logger.info(f"{temp_file.name=}")
+            temp_file.write(files[0])
+            temp_file.flush()
+            temp_path = Path(temp_file.name)
+
+        output_pdf_path = temp_path.with_suffix(".pdf")
 
         # Запускаем LibreOffice для конвертации
         subprocess.run([
             "libreoffice", "--headless", "--convert-to", "pdf",
-            str(temp_docx_path), "--outdir", str(temp_docx_path.parent)
+            str(temp_path), "--outdir", str(temp_path.parent)
         ], check=True)
 
         # Читаем PDF в память
@@ -115,7 +76,7 @@ class ConverterService:
             pdf_bytes = pdf_file.read()
 
         # Удаляем временные файлы
-        temp_docx_path.unlink(missing_ok=True)
+        temp_path.unlink(missing_ok=True)
         output_pdf_path.unlink(missing_ok=True)
 
         return io.BytesIO(pdf_bytes)
@@ -165,3 +126,22 @@ class ConverterService:
 
         pdf_stream.seek(0)
         return pdf_stream
+
+    def from_jpg_to_word(self, files: list[bytes]) -> io.BytesIO:
+        doc = Document()
+        # doc.add_heading("Images to Word", level=1)  # Заголовок
+
+        # Добавляем изображения в документ
+        for idx, img_bytes in enumerate(files):
+            # Читаем изображение из байтов
+            img_stream = io.BytesIO(img_bytes)
+            # doc.add_paragraph(f"Image {idx + 1}")  # Подпись к изображению
+            doc.add_picture(img_stream, width=Inches(5))  # Добавляем изображение (ширина 5 дюймов)
+            doc.add_paragraph("\n")  # Отступ
+
+        # Сохраняем документ в памяти с помощью BytesIO
+        doc_stream = io.BytesIO()
+        doc.save(doc_stream)
+        doc_stream.seek(0)  # Сброс позиции потока, чтобы его можно было прочитать
+
+        return doc_stream

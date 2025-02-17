@@ -23,18 +23,23 @@ def get_inline_keyboard(items: list[str]) -> InlineKeyboardMarkup:
     return keyboard
 
 
-def get_inline_keyboard_by_from_format(from_format: str) -> InlineKeyboardMarkup:
+def get_inline_keyboard_by_from_format(from_format: str, to_format: str) -> InlineKeyboardMarkup:
     match from_format:
         case "word":
             keyboard = get_inline_keyboard([
                 entity.Button.READY.value
             ])
         case "jpg":
-            keyboard = get_inline_keyboard([
-                entity.Orientation.LANDSCAPE.value,
-                entity.Orientation.PORTRAIT.value,
-                entity.Orientation.MIX.value
-            ])
+            if to_format == "pdf":
+                keyboard = get_inline_keyboard([
+                    entity.Orientation.LANDSCAPE.value,
+                    entity.Orientation.PORTRAIT.value,
+                    entity.Orientation.MIX.value
+                ])
+            else:
+                keyboard = get_inline_keyboard([
+                    entity.Button.READY.value
+                ])
         case _:
             keyboard = get_inline_keyboard([
                 entity.Button.READY.value

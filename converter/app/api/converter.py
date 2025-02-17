@@ -65,3 +65,13 @@ async def from_txt_to_pdf(service: deps.ConverterServiceDep, body: entity.Conver
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=converted.pdf"}
     )
+
+
+@router.post("/from-jpg-to-word")
+async def from_jpg_to_word(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_jpg_to_word(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=converted.docx"}
+    )

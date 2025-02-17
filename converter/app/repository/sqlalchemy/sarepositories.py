@@ -28,7 +28,10 @@ class FormatRepository(SARepository):
             self.model
         ).join(
             models.FormatCross, models.FormatCross.format_from_id == self.model.id
+        ).distinct(
+            self.model.id
         )
+
         rows = (await self.session.execute(stmt)).scalars().all()
         return TypeAdapter(list[entity.Format]).validate_python(rows)
 

@@ -69,15 +69,15 @@ async def choose_to_format(callback: CallbackQuery, api_service: ApiService, sta
 
 @router.message(
     (F.photo |
-     (F.document &
-      (
-        F.document.mime_type.startswith("image/") |
-        F.document.file_name.endswith(".docx") |
-        F.document.file_name.endswith(".pptx") |
-        F.document.file_name.endswith(".xlsx") |
-        F.document.file_name.endswith(".html") |
-        F.document.file_name.endswith(".txt")
-      )
+     (F.document
+      # (
+      #   F.document.mime_type.startswith("image/") |
+      #   F.document.file_name.endswith(".docx") |
+      #   F.document.file_name.endswith(".pptx") |
+      #   F.document.file_name.endswith(".xlsx") |
+      #   F.document.file_name.endswith(".html") |
+      #   F.document.file_name.endswith(".txt")
+      # )
       )
      ),
     StateFilter(entity.UserState.CHOOSE_TO),
@@ -92,6 +92,7 @@ async def collect_files(
     """Сохраняет изображения в список для текущего пользователя."""
     async with lock:
         from_format = await state_service.from_format
+        to_format = await state_service.to_format
         check = await convert_service.check_message_by_format(message, from_format)
         if not check:
             await message.answer("❌ Ты отправил файл с неверным расширением!")
@@ -100,7 +101,7 @@ async def collect_files(
         file = await convert_service.download_file_from_message(message)
         await state_service.add_file(file)
 
-        keyboard = get_inline_keyboard_by_from_format(from_format)
+        keyboard = get_inline_keyboard_by_from_format(from_format, to_format)
 
         await api_service.create_user_action(entity.AddUserAction(
             user_id=user.id,
@@ -109,7 +110,9 @@ async def collect_files(
         ))
         text = "✅ Файл отправлен! Нажми готово для конвертации."
         if from_format == "jpg":
-            text = "✅ Файл отправлен! Отправь ещё или выберите ориентацию страниц для конвертации."
+            text = "✅ Файл отправлен! Отправь ещё или нажми готово для конвертации."
+            if to_format == "pdf":
+                text = "✅ Файл отправлен! Отправь ещё или выберите ориентацию страниц для конвертации."
         await message.answer(text, reply_markup=keyboard)
 
 
@@ -147,7 +150,7 @@ async def convert_files(callback: CallbackQuery, api_service: ApiService, state_
     text = (f"📄 Твой PDF готов!{orientation}\n"
             f"Спасибо что воспользовались нашим сервисом. Для продолжения работа выберите соответствующий пункт меню.")
     await callback.message.answer_document(
-        BufferedInputFile(pdf_bytes, filename="converted.pdf"),
+        BufferedInputFile(pdf_bytes, filename="converted.docx"),
         caption=text,
         reply_markup=get_markup_keyboard(["Меню"])
     )
