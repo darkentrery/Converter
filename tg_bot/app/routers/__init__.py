@@ -1,7 +1,7 @@
 import asyncio
 
 from aiogram import types, Router, F
-from aiogram.filters import CommandStart, StateFilter
+from aiogram.filters import CommandStart, StateFilter, Command
 from aiogram.types import BufferedInputFile, CallbackQuery
 
 from app import entity
@@ -29,6 +29,7 @@ async def start_handler(message: types.Message, api_service: ApiService, state_s
 
 
 @router.message(F.text == entity.Button.CONVERT.value)
+@router.message(Command("convert"))
 async def convert_handler(message: types.Message, api_service: ApiService, state_service: StateService, user: entity.User):
     formats = await api_service.get_formats_with_pair()
     await state_service.set_state(entity.UserState.CONVERT)
@@ -42,6 +43,7 @@ async def convert_handler(message: types.Message, api_service: ApiService, state
 
 
 @router.message(F.text == entity.Button.FEEDBACK.value)
+@router.message(Command("feedback"))
 async def feedback_handler(message: types.Message, state_service: StateService):
     await state_service.set_state(entity.UserState.FEEDBACK)
     await message.answer(

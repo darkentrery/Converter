@@ -12,6 +12,7 @@ from app.config import config
 from app.routers import router
 from app.routers.middleware import ServiceMiddleware, ErrorMiddleware
 from app.service import ApiService, ConverterService, StateService
+from app.utils.command import get_bot_commands
 
 
 def get_dispatcher(bot: Bot, storage: BaseStorage) -> Dispatcher:
@@ -38,6 +39,7 @@ async def main():
     redis_client = redis.Redis(host=config.REDIS_HOST, port=config.REDIS_PORT, db=0)
     storage = RedisStorage(redis_client)
     bot = Bot(token=config.TG_TOKEN)
+    await bot.set_my_commands(get_bot_commands())
     dp = get_dispatcher(bot, storage)
     await dp.start_polling(bot)
 
