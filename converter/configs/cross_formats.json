@@ -16,6 +16,10 @@
     "format_to_name": "pdf"
   },
   {
+    "format_from_name": "csv",
+    "format_to_name": "pdf"
+  },
+  {
     "format_from_name": "html",
     "format_to_name": "pdf"
   },
@@ -26,5 +30,13 @@
   {
     "format_from_name": "jpg",
     "format_to_name": "word"
+  },
+  {
+    "format_from_name": "excel",
+    "format_to_name": "csv"
+  },
+  {
+    "format_from_name": "csv",
+    "format_to_name": "excel"
   }
 ]

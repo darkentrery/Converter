@@ -32,6 +32,7 @@ async def start_handler(message: types.Message, api_service: ApiService, state_s
 @router.message(Command("convert"))
 async def convert_handler(message: types.Message, api_service: ApiService, state_service: StateService, user: entity.User):
     formats = await api_service.get_formats_with_pair()
+    await state_service.set_default()
     await state_service.set_state(entity.UserState.CONVERT)
     keyboard = get_inline_keyboard([format.name for format in formats])
     await api_service.create_user_action(entity.AddUserAction(
@@ -45,6 +46,7 @@ async def convert_handler(message: types.Message, api_service: ApiService, state
 @router.message(F.text == entity.Button.FEEDBACK.value)
 @router.message(Command("feedback"))
 async def feedback_handler(message: types.Message, state_service: StateService):
+    await state_service.set_default()
     await state_service.set_state(entity.UserState.FEEDBACK)
     await message.answer(
         "Напишите и отправьте свой отзыв.",
@@ -104,7 +106,8 @@ async def choose_to_format_handler(callback: CallbackQuery, api_service: ApiServ
         action_type=entity.ActionType.CHOOSE_TO,
         comment=callback.data
     ))
-    await callback.message.answer("Отправь файл для конвертации в PDF.")
+    extension = callback.data.upper()
+    await callback.message.answer(f"Отправь файл для конвертации в {extension}.")
     await callback.answer()
 
 
@@ -166,7 +169,13 @@ async def collect_files_handler(
     ]),
     StateFilter(entity.UserState.CHOOSE_TO),
 )
-async def convert_files_handler(callback: CallbackQuery, api_service: ApiService, state_service: StateService, user: entity.User):
+async def convert_files_handler(
+        callback: CallbackQuery,
+        api_service: ApiService,
+        convert_service: ConverterService,
+        state_service: StateService,
+        user: entity.User
+):
     """Создаёт PDF из всех загруженных изображений после выбора ориентации."""
     if not (await state_service.files):
         await callback.answer("❌ Ты не отправил ни одного файла!")
@@ -179,8 +188,7 @@ async def convert_files_handler(callback: CallbackQuery, api_service: ApiService
         state.to_format,
         state.model_dump()
     )
-
-    await state_service.set_default()
+    logger.info(f"{pdf_bytes=}")
     orientation = f" (Ориентация: {state.orientation})" if state.orientation else ""
 
     await api_service.create_user_action(entity.AddUserAction(
@@ -190,8 +198,10 @@ async def convert_files_handler(callback: CallbackQuery, api_service: ApiService
     ))
     text = (f"📄 Твой PDF готов!{orientation}\n"
             f"Спасибо что воспользовались нашим сервисом. Для продолжения работа выберите соответствующий пункт меню.")
+    extension = convert_service.get_extension_by_format((await state_service.to_format))
+    await state_service.set_default()
     await callback.message.answer_document(
-        BufferedInputFile(pdf_bytes, filename="converted.docx"),
+        BufferedInputFile(pdf_bytes, filename=f"converted.{extension}"),
         caption=text,
         reply_markup=get_markup_keyboard([entity.Button.CONVERT.value, entity.Button.FEEDBACK.value])
     )

@@ -41,6 +41,21 @@ class ConverterService:
             case "txt":
                 if message.document.file_name.endswith(".txt"):
                     check = True
+            case "csv":
+                if message.document.file_name.endswith(".csv"):
+                    check = True
             case _:
                 check = False
         return check
+
+    def get_extension_by_format(self, format: str) -> str:
+        extensions = {
+            "word": "docx",
+            "powerpoint": "pptx",
+            "excel": "xlsx",
+            "html": "html",
+            "txt": "txt",
+            "csv": "csv",
+            "pdf": "pdf",
+        }
+        return extensions[format]

@@ -47,6 +47,16 @@ async def from_excel_to_pdf(service: deps.ConverterServiceDep, body: entity.Conv
     )
 
 
+@router.post("/from-csv-to-pdf")
+async def from_csv_to_pdf(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_csv_to_pdf(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=converted.pdf"}
+    )
+
+
 @router.post("/from-html-to-pdf")
 async def from_html_to_pdf(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
     file = service.from_html_to_pdf(body.files_bytes)
@@ -72,6 +82,26 @@ async def from_jpg_to_word(service: deps.ConverterServiceDep, body: entity.Conve
     file = service.from_jpg_to_word(body.files_bytes)
     return StreamingResponse(
         file,
-        media_type="application/pdf",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={"Content-Disposition": "attachment; filename=converted.docx"}
+    )
+
+
+@router.post("/from-excel-to-csv")
+async def from_excel_to_csv(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_excel_to_csv(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=converted.csv"}
+    )
+
+
+@router.post("/from-csv-to-excel")
+async def from_csv_to_excel(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_csv_to_excel(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=converted.csv"}
     )

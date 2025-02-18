@@ -83,8 +83,32 @@ class ConverterService:
 
     def from_excel_to_pdf(self, files: list[bytes]) -> io.BytesIO:
         """Конвертирует Excel (bytes) в PDF (bytes)"""
-        excel_stream = io.BytesIO(files[0])
-        df = pd.read_excel(excel_stream)
+        file_stream = io.BytesIO(files[0])
+        df = pd.read_excel(file_stream)
+        html_content = df.to_html(index=False, border=1)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_pdf_file:
+            temp_pdf_path = temp_pdf_file.name
+
+        options = {
+            "page-size": "A4",
+            "encoding": "UTF-8",
+            "no-outline": None
+        }
+
+        pdfkit.from_string(html_content, temp_pdf_path, options=options)
+        with open(temp_pdf_path, 'rb') as f:
+            pdf_stream = io.BytesIO(f.read())
+
+        os.remove(temp_pdf_path)
+
+        pdf_stream.seek(0)
+        return pdf_stream
+
+    def from_csv_to_pdf(self, files: list[bytes]) -> io.BytesIO:
+        """Конвертирует Excel (bytes) в PDF (bytes)"""
+        file_stream = io.BytesIO(files[0])
+        df = pd.read_csv(file_stream)
         html_content = df.to_html(index=False, border=1)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_pdf_file:
@@ -145,3 +169,23 @@ class ConverterService:
         doc_stream.seek(0)  # Сброс позиции потока, чтобы его можно было прочитать
 
         return doc_stream
+
+    def from_csv_to_excel(self, files: list[bytes]) -> io.BytesIO:
+        """Конвертирует Excel (bytes) в PDF (bytes)"""
+        file_stream = io.BytesIO(files[0])
+        df = pd.read_csv(file_stream)
+
+        output_buffer = io.BytesIO()
+        df.to_excel(output_buffer, index=False)
+        output_buffer.seek(0)
+        return output_buffer
+
+    def from_excel_to_csv(self, files: list[bytes]) -> io.BytesIO:
+        """Конвертирует Excel (bytes) в PDF (bytes)"""
+        file_stream = io.BytesIO(files[0])
+        df = pd.read_excel(file_stream)
+
+        output_buffer = io.BytesIO()
+        df.to_csv(output_buffer, index=False, encoding="utf-8")
+        output_buffer.seek(0)
+        return output_buffer
