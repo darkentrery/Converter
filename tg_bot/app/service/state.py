@@ -67,3 +67,4 @@ class StateService:
     async def set_default(self) -> None:
         await self.state.clear()
         await self.state.set_data(entity.UserData().model_dump())
+        await self.state.set_state(entity.UserState.START)

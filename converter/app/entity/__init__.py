@@ -4,6 +4,7 @@ from app.entity.format_cross import FormatCross, FormatCrossWithName
 from app.entity.converter import ConvertRequest
 from app.entity.enums import Orientation, ActionType
 from app.entity.user_action import UserAction, AddUserAction
+from app.entity.feedback import Feedback, AddFeedback
 
 __all__ = [
     "User",
@@ -16,4 +17,6 @@ __all__ = [
     "ActionType",
     "UserAction",
     "AddUserAction",
+    "Feedback",
+    "AddFeedback",
 ]

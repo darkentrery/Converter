@@ -5,6 +5,7 @@ from app.entity.user import User, AddUser
 from app.entity.user_action import UserAction, AddUserAction
 from app.entity.format import Format
 from app.entity.format_cross import FormatCross, FormatCrossWithName
+from app.entity.feedback import Feedback, AddFeedback
 
 __all__ = [
     "Button",
@@ -19,4 +20,6 @@ __all__ = [
     "Format",
     "FormatCross",
     "FormatCrossWithName",
+    "Feedback",
+    "AddFeedback",
 ]

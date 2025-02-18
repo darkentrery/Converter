@@ -31,6 +31,13 @@ class UserAction(IdMixin, TimestampMixin, BaseModel):
     comment: Mapped[str] = mapped_column(nullable=True)
 
 
+class Feedback(IdMixin, TimestampMixin, BaseModel):
+    __tablename__ = "feedbacks"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    text: Mapped[str] = mapped_column(nullable=False)
+
+
 class Format(IdMixin, TimestampMixin, BaseModel):
     __tablename__ = "formats"
 

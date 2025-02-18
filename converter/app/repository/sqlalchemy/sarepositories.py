@@ -18,6 +18,12 @@ class UserActionRepository(SARepository):
     schema = entity.UserAction
 
 
+class FeedbackRepository(SARepository):
+    name = "Feedback"
+    model = models.Feedback
+    schema = entity.Feedback
+
+
 class FormatRepository(SARepository):
     name = "Format"
     model = models.Format

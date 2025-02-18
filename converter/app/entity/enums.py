@@ -13,3 +13,5 @@ class ActionType(enum.Enum):
     CHOOSE_TO = "choose_to"
     UPLOADING = "uploading"
     GOT_RESULT = "got_result"
+    CONVERT = "convert"
+    FEEDBACK = "feedback"

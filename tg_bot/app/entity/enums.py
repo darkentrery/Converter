@@ -3,6 +3,8 @@ import enum
 
 class Button(enum.Enum):
     READY: str = "Готово"
+    CONVERT = "Конвертация"
+    FEEDBACK = "Оставить отзыв"
 
 
 class Orientation(enum.Enum):
@@ -17,3 +19,5 @@ class ActionType(enum.Enum):
     CHOOSE_TO = "choose_to"
     UPLOADING = "uploading"
     GOT_RESULT = "got_result"
+    CONVERT = "convert"
+    FEEDBACK = "feedback"
