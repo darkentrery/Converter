@@ -6,15 +6,27 @@ services:
     build:
       context: .
       dockerfile: converter/Dockerfile
-#    command: python3 main.py
     volumes:
       - ./converter:/home/appuser
+      - temp_data:/tmp/
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - postgres
+      - pdf2html
     ports:
       - "3000:3000"
     env_file:
       - ./.env
+
+  pdf2html:
+    container_name: pdf2html
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - temp_data:/tmp/
+#    ports:
+#      - "5000:5000"
 
   postgres:
     image: postgres:latest
@@ -52,3 +64,4 @@ volumes:
   redis_data:
     driver: local
   postgres_data_converter:
+  temp_data:

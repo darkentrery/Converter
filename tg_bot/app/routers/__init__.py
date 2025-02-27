@@ -23,8 +23,13 @@ async def start_handler(message: types.Message, api_service: ApiService, state_s
     ))
     await message.answer(
         "Привет! Мы рады, что вы выбрали наш сервис! Здесь вы можете конвертировать файлы различных форматов. "
-        "Также мы будем рады вашему отзыву, это позволит нам улучшить сервис.",
-        reply_markup=get_markup_keyboard([entity.Button.CONVERT.value, entity.Button.FEEDBACK.value])
+        "Также мы будем рады вашему отзыву, это позволит нам улучшить сервис. \n\n"
+        "Для управления сервисом откройте меню и выберите интересующий вас пункт.",
+        reply_markup=get_markup_keyboard([
+            entity.Button.CONVERT.value,
+            entity.Button.FEEDBACK.value,
+            entity.Button.DONAT.value
+        ])
     )
 
 
@@ -50,7 +55,26 @@ async def feedback_handler(message: types.Message, state_service: StateService):
     await state_service.set_state(entity.UserState.FEEDBACK)
     await message.answer(
         "Напишите и отправьте свой отзыв.",
-        reply_markup=get_markup_keyboard([entity.Button.CONVERT.value, entity.Button.FEEDBACK.value])
+        reply_markup=get_markup_keyboard([
+            entity.Button.CONVERT.value,
+            entity.Button.FEEDBACK.value,
+            entity.Button.DONAT.value,
+        ])
+    )
+
+
+@router.message(F.text == entity.Button.DONAT.value)
+@router.message(Command("donat"))
+async def donat_handler(message: types.Message, state_service: StateService):
+    await state_service.set_default()
+    await state_service.set_state(entity.UserState.DONAT)
+    await message.answer(
+        "Ваша поддержка очень важна для нас. Поддержать развитие проекта можно по адресу кошелька ХХХХХ.",
+        reply_markup=get_markup_keyboard([
+            entity.Button.CONVERT.value,
+            entity.Button.FEEDBACK.value,
+            entity.Button.DONAT.value,
+        ])
     )
 
 
@@ -217,6 +241,10 @@ async def convert_files_handler(
     await callback.message.answer_document(
         BufferedInputFile(pdf_bytes, filename=f"converted.{extension}"),
         caption=text,
-        reply_markup=get_markup_keyboard([entity.Button.CONVERT.value, entity.Button.FEEDBACK.value])
+        reply_markup=get_markup_keyboard([
+            entity.Button.CONVERT.value,
+            entity.Button.FEEDBACK.value,
+            entity.Button.DONAT.value,
+        ])
     )
     await callback.answer()

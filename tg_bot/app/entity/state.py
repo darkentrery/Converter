@@ -9,3 +9,4 @@ class UserState(StatesGroup):
     UPLOADING = State()
     ORIENTATION = State()
     FEEDBACK = State()
+    DONAT = State()
