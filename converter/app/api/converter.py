@@ -105,3 +105,13 @@ async def from_csv_to_excel(service: deps.ConverterServiceDep, body: entity.Conv
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=converted.csv"}
     )
+
+
+@router.post("/from-pdf-to-word")
+async def from_pdf_to_word(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_pdf_to_word(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": "attachment; filename=converted.docx"}
+    )

@@ -112,18 +112,7 @@ async def choose_to_format_handler(callback: CallbackQuery, api_service: ApiServ
 
 
 @router.message(
-    (F.photo |
-     (F.document
-      # (
-      #   F.document.mime_type.startswith("image/") |
-      #   F.document.file_name.endswith(".docx") |
-      #   F.document.file_name.endswith(".pptx") |
-      #   F.document.file_name.endswith(".xlsx") |
-      #   F.document.file_name.endswith(".html") |
-      #   F.document.file_name.endswith(".txt")
-      # )
-      )
-     ),
+    (F.photo | F.document),
     StateFilter(entity.UserState.CHOOSE_TO),
 )
 async def collect_files_handler(
@@ -152,12 +141,37 @@ async def collect_files_handler(
             action_type=entity.ActionType.UPLOADING,
             comment=None
         ))
+        files = await state_service.files
         text = "✅ Файл отправлен! Нажми готово для конвертации."
         if from_format == "jpg":
-            text = "✅ Файл отправлен! Отправь ещё или нажми готово для конвертации."
+            text = f"✅ Отправлено {len(files)} файлов! Отправь ещё или нажми готово для конвертации."
             if to_format == "pdf":
-                text = "✅ Файл отправлен! Отправь ещё или выберите ориентацию страниц для конвертации."
-        await message.answer(text, reply_markup=keyboard)
+                text = f"✅ Отправлено {len(files)} файлов! Отправь ещё или выберите ориентацию страниц для конвертации."
+
+        if from_format == "jpg" and len(files) > 1:
+            last_message = await state_service.last_message
+            await convert_service.bot.delete_message(
+                chat_id=last_message.chat.id,
+                message_id=last_message.message_id,
+            )
+        message = await message.answer(text, reply_markup=keyboard)
+        await state_service.set_last_message(message)
+
+
+@router.message(
+    (~F.photo &
+     ~F.document &
+     ~F.data.in_([
+        entity.Orientation.LANDSCAPE.value,
+        entity.Orientation.PORTRAIT.value,
+        entity.Orientation.MIX.value,
+        entity.Button.READY.value,
+    ])),
+    StateFilter(entity.UserState.CHOOSE_TO),
+)
+async def bad_message_handler(message: types.Message):
+    """Обработка сообщений с неверным форматом или без файлов"""
+    await message.answer("❌ Ты отправил с неверным типом файла или без него!")
 
 
 @router.callback_query(
@@ -197,7 +211,7 @@ async def convert_files_handler(
         comment=None
     ))
     text = (f"📄 Твой PDF готов!{orientation}\n"
-            f"Спасибо что воспользовались нашим сервисом. Для продолжения работа выберите соответствующий пункт меню.")
+            f"Спасибо что воспользовались нашим сервисом. Для продолжения работы выберите соответствующий пункт меню.")
     extension = convert_service.get_extension_by_format((await state_service.to_format))
     await state_service.set_default()
     await callback.message.answer_document(

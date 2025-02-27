@@ -44,6 +44,9 @@ class ConverterService:
             case "csv":
                 if message.document.file_name.endswith(".csv"):
                     check = True
+            case "pdf":
+                if message.document.file_name.endswith(".pdf"):
+                    check = True
             case _:
                 check = False
         return check

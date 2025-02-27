@@ -38,5 +38,9 @@
   {
     "format_from_name": "csv",
     "format_to_name": "excel"
+  },
+  {
+    "format_from_name": "pdf",
+    "format_to_name": "html"
   }
 ]

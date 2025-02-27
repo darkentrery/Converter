@@ -1,5 +1,6 @@
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StateType
+from aiogram.types import Message
 from pydantic import TypeAdapter
 
 from app import entity
@@ -57,6 +58,16 @@ class StateService:
     async def set_to_format(self, value: str) -> None:
         _state = await self.get_user_state()
         _state.to_format = value
+        await self.state.update_data(_state.model_dump())
+
+    @property
+    async def last_message(self) -> Message | None:
+        _state = await self.get_user_state()
+        return _state.last_message
+
+    async def set_last_message(self, value: Message | None) -> None:
+        _state = await self.get_user_state()
+        _state.last_message = value
         await self.state.update_data(_state.model_dump())
 
     @property

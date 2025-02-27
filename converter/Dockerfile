@@ -1,12 +1,15 @@
 FROM python:3.11
 #Используем образ python 3.11 (легковесный)
 
-# Устанавливаем LibreOffice
+# Устанавливаем dependecies
 RUN apt-get update && apt-get install -y \
+    docker.io \
+    default-jre \
     libreoffice-core \
     libreoffice-writer \
     libreoffice-calc \
     libreoffice-impress \
+    libreoffice-java-common \
     uno-libs-private \
     libuno-cppu3 \
     libuno-cppuhelpergcc3-3 \
@@ -14,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     libuno-sal3 \
     libuno-salhelpergcc3-3 \
     wkhtmltopdf \
+    pandoc \
     && rm -rf /var/lib/apt/lists/*
 
 # Запускаем приложение от пользователя appuser,
@@ -41,7 +45,8 @@ RUN chown -R appuser:appuser $HOME
 RUN pip3 install --no-cache poetry && poetry config virtualenvs.create false \
     && poetry install --no-cache --no-interaction --no-ansi
 
-USER $APP_USER
-
+#USER $APP_USER
+#TODO Пока не получается запустить докер из под appuser
+USER root
 
 ENTRYPOINT ["uvicorn", "app.api:app", "--log-level", "debug", "--host", "0.0.0.0", "--port", "3000"]

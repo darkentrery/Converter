@@ -46,28 +46,47 @@ class ConverterService:
             return entity.Orientation.PORTRAIT.value
 
     def from_word_to_pdf(self, files: list[bytes]) -> io.BytesIO:
-        return self._convert_by_libreoffice(files, ".docs")
+        return self._convert_by_libreoffice(files, "docx", "pdf")
 
     def from_powerpoint_to_pdf(self, files: list[bytes]) -> io.BytesIO:
-        return self._convert_by_libreoffice(files, ".pptx")
+        return self._convert_by_libreoffice(files, "pptx", "pdf")
 
     def from_txt_to_pdf(self, files: list[bytes]) -> io.BytesIO:
-        return self._convert_by_libreoffice(files, ".txt")
+        return self._convert_by_libreoffice(files, "txt", "pdf")
 
-    def _convert_by_libreoffice(self, files: list[bytes], suffix: str) -> io.BytesIO:
+    # def from_pdf_to_word(self, files: list[bytes]) -> io.BytesIO:
+    #     html_bytes = self.from_pdf_to_html(files).getvalue()
+    #
+    #     with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as temp_html_file:
+    #         temp_html_file.write(html_bytes)
+    #         temp_html_file.flush()
+    #         temp_path = Path(temp_html_file.name)
+    #         output_path = temp_path.with_suffix(f".docx")
+    #
+    #     pypandoc.convert_file(temp_path, 'docx', outputfile=output_path)
+    #
+    #     with open(output_path, "rb") as pdf_file:
+    #         word_bytes = pdf_file.read()
+    #
+    #     temp_path.unlink(missing_ok=True)
+    #     output_path.unlink(missing_ok=True)
+    #
+    #     return io.BytesIO(word_bytes)
+
+    def _convert_by_libreoffice(self, files: list[bytes], from_suffix: str, to_suffix: str) -> io.BytesIO:
         """Конвертирует документ в PDF используя LibreOffice (без сохранения на диск)"""
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{from_suffix}") as temp_file:
             logger.info(f"{temp_file.name=}")
             temp_file.write(files[0])
             temp_file.flush()
             temp_path = Path(temp_file.name)
 
-        output_pdf_path = temp_path.with_suffix(".pdf")
+            output_pdf_path = temp_path.with_suffix(f".{to_suffix}")
 
         # Запускаем LibreOffice для конвертации
         subprocess.run([
-            "libreoffice", "--headless", "--convert-to", "pdf",
+            "libreoffice", "--headless", "--convert-to", to_suffix,
             str(temp_path), "--outdir", str(temp_path.parent)
         ], check=True)
 
@@ -189,3 +208,25 @@ class ConverterService:
         df.to_csv(output_buffer, index=False, encoding="utf-8")
         output_buffer.seek(0)
         return output_buffer
+
+    def from_pdf_to_html(self, files: list[bytes]) -> io.BytesIO:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".pdf") as temp_file:
+            logger.info(f"{temp_file.name=}")
+            temp_file.write(files[0])
+            temp_file.flush()
+            temp_path = Path(temp_file.name)
+            output_path = temp_path.with_suffix(f".html")
+
+        # Запускаем pdf2htmlEX
+        subprocess.run(
+            ["docker", "exec", "pdf2html", "pdf2htmlEX", f"{temp_path}", f"{output_path.name}"],
+            check=True, capture_output=True
+        )
+        with open(output_path, "rb") as html_file:
+            html_content = io.BytesIO(html_file.read())
+            html_content.seek(0)
+
+        os.remove(temp_path)
+        os.remove(output_path)
+
+        return html_content
