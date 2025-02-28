@@ -47,6 +47,9 @@ class ConverterService:
             case "pdf":
                 if message.document.file_name.endswith(".pdf"):
                     check = True
+            case "fb2":
+                if message.document.file_name.endswith(".fb2"):
+                    check = True
             case _:
                 check = False
         return check
@@ -60,5 +63,6 @@ class ConverterService:
             "txt": "txt",
             "csv": "csv",
             "pdf": "pdf",
+            "fb2": "fb2",
         }
         return extensions[format]

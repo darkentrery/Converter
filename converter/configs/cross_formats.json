@@ -42,5 +42,13 @@
   {
     "format_from_name": "pdf",
     "format_to_name": "html"
+  },
+  {
+    "format_from_name": "pdf",
+    "format_to_name": "word"
+  },
+  {
+    "format_from_name": "word",
+    "format_to_name": "fb2"
   }
 ]

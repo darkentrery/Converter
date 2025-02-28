@@ -1,3 +1,4 @@
+import base64
 import io
 import os
 import subprocess
@@ -9,6 +10,8 @@ import pdfkit
 from PIL import Image
 from docx import Document
 from docx.shared import Inches
+from lxml import etree
+from pdf2docx import Converter
 
 from app import entity
 from app.config import config
@@ -54,24 +57,22 @@ class ConverterService:
     def from_txt_to_pdf(self, files: list[bytes]) -> io.BytesIO:
         return self._convert_by_libreoffice(files, "txt", "pdf")
 
-    # def from_pdf_to_word(self, files: list[bytes]) -> io.BytesIO:
-    #     html_bytes = self.from_pdf_to_html(files).getvalue()
-    #
-    #     with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as temp_html_file:
-    #         temp_html_file.write(html_bytes)
-    #         temp_html_file.flush()
-    #         temp_path = Path(temp_html_file.name)
-    #         output_path = temp_path.with_suffix(f".docx")
-    #
-    #     pypandoc.convert_file(temp_path, 'docx', outputfile=output_path)
-    #
-    #     with open(output_path, "rb") as pdf_file:
-    #         word_bytes = pdf_file.read()
-    #
-    #     temp_path.unlink(missing_ok=True)
-    #     output_path.unlink(missing_ok=True)
-    #
-    #     return io.BytesIO(word_bytes)
+    def from_pdf_to_word(self, files: list[bytes]) -> io.BytesIO:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            input_path = Path(temp_file.name)
+            output_path = input_path.with_suffix(f".docx")
+
+        cv = Converter(stream=files[0])
+        cv.convert(str(output_path), start=0, end=None)
+        cv.close()
+
+        with open(output_path, "rb") as pdf_file:
+            word_bytes = pdf_file.read()
+
+        input_path.unlink(missing_ok=True)
+        output_path.unlink(missing_ok=True)
+
+        return io.BytesIO(word_bytes)
 
     def _convert_by_libreoffice(self, files: list[bytes], from_suffix: str, to_suffix: str) -> io.BytesIO:
         """Конвертирует документ в PDF используя LibreOffice (без сохранения на диск)"""
@@ -81,7 +82,6 @@ class ConverterService:
             temp_file.write(files[0])
             temp_file.flush()
             temp_path = Path(temp_file.name)
-
             output_pdf_path = temp_path.with_suffix(f".{to_suffix}")
 
         # Запускаем LibreOffice для конвертации
@@ -105,55 +105,23 @@ class ConverterService:
         file_stream = io.BytesIO(files[0])
         df = pd.read_excel(file_stream)
         html_content = df.to_html(index=False, border=1)
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_pdf_file:
-            temp_pdf_path = temp_pdf_file.name
-
-        options = {
-            "page-size": "A4",
-            "encoding": "UTF-8",
-            "no-outline": None
-        }
-
-        pdfkit.from_string(html_content, temp_pdf_path, options=options)
-        with open(temp_pdf_path, 'rb') as f:
-            pdf_stream = io.BytesIO(f.read())
-
-        os.remove(temp_pdf_path)
-
-        pdf_stream.seek(0)
-        return pdf_stream
+        return self._convert_by_pdfkit(html_content, "pdf")
 
     def from_csv_to_pdf(self, files: list[bytes]) -> io.BytesIO:
         """Конвертирует Excel (bytes) в PDF (bytes)"""
         file_stream = io.BytesIO(files[0])
         df = pd.read_csv(file_stream)
         html_content = df.to_html(index=False, border=1)
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_pdf_file:
-            temp_pdf_path = temp_pdf_file.name
-
-        options = {
-            "page-size": "A4",
-            "encoding": "UTF-8",
-            "no-outline": None
-        }
-
-        pdfkit.from_string(html_content, temp_pdf_path, options=options)
-        with open(temp_pdf_path, 'rb') as f:
-            pdf_stream = io.BytesIO(f.read())
-
-        os.remove(temp_pdf_path)
-
-        pdf_stream.seek(0)
-        return pdf_stream
+        return self._convert_by_pdfkit(html_content, "pdf")
 
     def from_html_to_pdf(self, files: list[bytes]) -> io.BytesIO:
         """Конвертирует Html (bytes) в PDF (bytes)"""
         html_content = files[0].decode('utf-8')
+        return self._convert_by_pdfkit(html_content, "pdf")
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_pdf_file:
-            temp_pdf_path = temp_pdf_file.name
+    def _convert_by_pdfkit(self, content: str, to_suffix: str) -> io.BytesIO:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{to_suffix}") as temp_file:
+            temp_path = temp_file.name
 
         options = {
             "page-size": "A4",
@@ -161,11 +129,11 @@ class ConverterService:
             "no-outline": None
         }
 
-        pdfkit.from_string(html_content, temp_pdf_path, options=options)
-        with open(temp_pdf_path, 'rb') as f:
+        pdfkit.from_string(content, temp_path, options=options)
+        with open(temp_path, 'rb') as f:
             pdf_stream = io.BytesIO(f.read())
 
-        os.remove(temp_pdf_path)
+        os.remove(temp_path)
 
         pdf_stream.seek(0)
         return pdf_stream
@@ -211,22 +179,106 @@ class ConverterService:
 
     def from_pdf_to_html(self, files: list[bytes]) -> io.BytesIO:
         with tempfile.NamedTemporaryFile(delete=False, suffix=f".pdf") as temp_file:
-            logger.info(f"{temp_file.name=}")
             temp_file.write(files[0])
             temp_file.flush()
-            temp_path = Path(temp_file.name)
-            output_path = temp_path.with_suffix(f".html")
+            input_path = Path(temp_file.name)
+            output_path = input_path.with_suffix(f".html")
 
         # Запускаем pdf2htmlEX
         subprocess.run(
-            ["docker", "exec", "pdf2html", "pdf2htmlEX", f"{temp_path}", f"{output_path.name}"],
+            ["docker", "exec", "pdf2html", "pdf2htmlEX", f"{input_path}", f"{output_path.name}"],
             check=True, capture_output=True
         )
         with open(output_path, "rb") as html_file:
             html_content = io.BytesIO(html_file.read())
             html_content.seek(0)
 
-        os.remove(temp_path)
+        os.remove(input_path)
         os.remove(output_path)
 
         return html_content
+
+    def from_word_to_fb2(self, files: list[bytes]) -> io.BytesIO:
+        """Конвертирует .docx (переданный как байты) в .fb2"""
+        doc = Document(io.BytesIO(files[0]))
+
+        fb2 = etree.Element("FictionBook", xmlns="http://www.gribuser.ru/xml/fictionbook/2.0")
+        description = etree.SubElement(fb2, "description")
+        title_info = etree.SubElement(description, "title-info")
+
+        book_title = etree.SubElement(title_info, "book-title")
+        book_title.text = "Название книги"
+
+        body = etree.SubElement(fb2, "body")
+        body_content = etree.SubElement(body, "section")
+
+        img_counter = 1  # Счетчик изображений
+        images_dict = {}  # Словарь для хранения изображений
+
+        def add_paragraph(text: str) -> None:
+            """Добавляет параграф в FB2"""
+            p = etree.SubElement(body_content, "p")
+            p.text = text
+
+        def add_image(image_bytes: bytes) -> None:
+            """Добавляет картинку в тело FB2 и в <binary>"""
+            nonlocal img_counter
+            img_id = f"img_{img_counter}"
+            img_counter += 1
+
+            # Кодируем картинку в base64
+            encoded_image = base64.b64encode(image_bytes).decode("utf-8")
+
+            # Добавляем <image> в текст
+            etree.SubElement(body_content, "image", href=f"#{img_id}")
+
+            # Сохраняем картинку в словарь для <binary>
+            images_dict[img_id] = encoded_image
+
+        def process_element(element):
+            """Обрабатывает элементы документа (текст и картинки)"""
+            if element.tag.endswith("p"):  # Параграф
+                text = element.text or ""
+                add_paragraph(text.strip())
+
+            elif element.tag.endswith("tbl"):  # Таблица
+                for row in element.findall(".//{*}tr"):  # Строки таблицы
+                    row_text = []
+                    for cell in row.findall(".//{*}tc"):  # Ячейки
+                        paragraphs = cell.findall(".//{*}p")  # Ищем только параграфы в ячейке
+                        cell_text = " ".join(
+                            p.text.strip() for p in paragraphs if p.text)  # Склеиваем текст в одной ячейке
+                        row_text.append(cell_text)
+
+                        # Добавляем строку таблицы как один параграф
+                    if row_text:
+                        add_paragraph(" | ".join(row_text))
+
+            # Извлекаем картинки прямо из параграфов и таблиц
+            for shape in element.findall(".//{*}graphic"):
+                try:
+                    pic = shape.find(".//{*}pic")
+                    if pic is not None:
+                        blip_fill = pic.find(".//{*}blipFill")
+                        if blip_fill is not None:
+                            blip = blip_fill.find(".//{*}blip")
+                            embed_id = blip.get(
+                                "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed")
+
+                            # Получаем изображение
+                            image_part = doc.part.related_parts[embed_id]
+                            add_image(image_part.blob)
+                except Exception as e:
+                    logger.error(f"Ошибка извлечения изображения: {e}")
+
+        # Обрабатываем основной контент
+        for element in doc.element.body:
+            process_element(element)
+
+        # Добавляем изображения в <binary>
+        for img_id, img_data in images_dict.items():
+            binary = etree.SubElement(fb2, "binary", id=img_id, content_type="image/jpeg")
+            binary.text = img_data
+
+        content = etree.tostring(fb2, pretty_print=True, encoding="utf-8", xml_declaration=True)
+        return io.BytesIO(content)

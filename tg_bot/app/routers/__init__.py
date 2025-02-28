@@ -7,7 +7,12 @@ from aiogram.types import BufferedInputFile, CallbackQuery
 from app import entity
 from app.logger import logger
 from app.service import ConverterService, ApiService, StateService
-from app.utils.keybord import get_markup_keyboard, get_inline_keyboard_by_from_format, get_inline_keyboard
+from app.utils.keybord import (
+    get_markup_keyboard,
+    get_inline_keyboard_by_from_format,
+    get_inline_keyboard,
+    get_main_markup_keyboard
+)
 
 router = Router()
 lock = asyncio.Lock()
@@ -25,11 +30,7 @@ async def start_handler(message: types.Message, api_service: ApiService, state_s
         "Привет! Мы рады, что вы выбрали наш сервис! Здесь вы можете конвертировать файлы различных форматов. "
         "Также мы будем рады вашему отзыву, это позволит нам улучшить сервис. \n\n"
         "Для управления сервисом откройте меню и выберите интересующий вас пункт.",
-        reply_markup=get_markup_keyboard([
-            entity.Button.CONVERT.value,
-            entity.Button.FEEDBACK.value,
-            entity.Button.DONAT.value
-        ])
+        reply_markup=get_main_markup_keyboard()
     )
 
 
@@ -45,7 +46,7 @@ async def convert_handler(message: types.Message, api_service: ApiService, state
         action_type=entity.ActionType.CONVERT,
         comment=None
     ))
-    await message.answer("Привет! Выбери формат загружаемого файла:", reply_markup=keyboard)
+    await message.answer("Выберите формат загружаемого файла:", reply_markup=keyboard)
 
 
 @router.message(F.text == entity.Button.FEEDBACK.value)
@@ -55,11 +56,7 @@ async def feedback_handler(message: types.Message, state_service: StateService):
     await state_service.set_state(entity.UserState.FEEDBACK)
     await message.answer(
         "Напишите и отправьте свой отзыв.",
-        reply_markup=get_markup_keyboard([
-            entity.Button.CONVERT.value,
-            entity.Button.FEEDBACK.value,
-            entity.Button.DONAT.value,
-        ])
+        reply_markup=get_main_markup_keyboard()
     )
 
 
@@ -69,12 +66,8 @@ async def donat_handler(message: types.Message, state_service: StateService):
     await state_service.set_default()
     await state_service.set_state(entity.UserState.DONAT)
     await message.answer(
-        "Ваша поддержка очень важна для нас. Поддержать развитие проекта можно по адресу кошелька ХХХХХ.",
-        reply_markup=get_markup_keyboard([
-            entity.Button.CONVERT.value,
-            entity.Button.FEEDBACK.value,
-            entity.Button.DONAT.value,
-        ])
+        "Ваша поддержка очень важна для нас. Поддержать развитие проекта можно по адресу кошелька 0xf24b635d5a63D460Fb7514803f5A6F188fF8B807.",
+        reply_markup=get_main_markup_keyboard()
     )
 
 
@@ -152,7 +145,7 @@ async def collect_files_handler(
         to_format = await state_service.to_format
         check = await convert_service.check_message_by_format(message, from_format)
         if not check:
-            await message.answer("❌ Ты отправил файл с неверным расширением!")
+            await message.answer("❌ Вы отправили файл с неверным расширением!")
             return
 
         file = await convert_service.download_file_from_message(message)
@@ -168,9 +161,9 @@ async def collect_files_handler(
         files = await state_service.files
         text = "✅ Файл отправлен! Нажми готово для конвертации."
         if from_format == "jpg":
-            text = f"✅ Отправлено {len(files)} файлов! Отправь ещё или нажми готово для конвертации."
+            text = f"✅ Отправлено {len(files)} файлов! Отправьте ещё или нажмите готово для конвертации."
             if to_format == "pdf":
-                text = f"✅ Отправлено {len(files)} файлов! Отправь ещё или выберите ориентацию страниц для конвертации."
+                text = f"✅ Отправлено {len(files)} файлов! Отправьте ещё или выберите ориентацию страниц для конвертации."
 
         if from_format == "jpg" and len(files) > 1:
             last_message = await state_service.last_message
@@ -195,7 +188,7 @@ async def collect_files_handler(
 )
 async def bad_message_handler(message: types.Message):
     """Обработка сообщений с неверным форматом или без файлов"""
-    await message.answer("❌ Ты отправил с неверным типом файла или без него!")
+    await message.answer("❌ Вы отправили сообщение с неверным типом файла или без него!")
 
 
 @router.callback_query(
@@ -216,17 +209,17 @@ async def convert_files_handler(
 ):
     """Создаёт PDF из всех загруженных изображений после выбора ориентации."""
     if not (await state_service.files):
-        await callback.answer("❌ Ты не отправил ни одного файла!")
+        await callback.answer("❌ Вы не отправили ни одного файла!")
         return
 
-    await state_service.set_orientation(callback.data)
+    if callback.data != entity.Button.READY.value:
+        await state_service.set_orientation(callback.data)
     state = await state_service.get_user_state()
     pdf_bytes = await api_service.convert(
         state.from_format,
         state.to_format,
         state.model_dump()
     )
-    logger.info(f"{pdf_bytes=}")
     orientation = f" (Ориентация: {state.orientation})" if state.orientation else ""
 
     await api_service.create_user_action(entity.AddUserAction(
@@ -234,17 +227,13 @@ async def convert_files_handler(
         action_type=entity.ActionType.GOT_RESULT,
         comment=None
     ))
-    text = (f"📄 Твой PDF готов!{orientation}\n"
+    text = (f"📄 Ваш файл готов!{orientation}\n"
             f"Спасибо что воспользовались нашим сервисом. Для продолжения работы выберите соответствующий пункт меню.")
     extension = convert_service.get_extension_by_format((await state_service.to_format))
     await state_service.set_default()
     await callback.message.answer_document(
         BufferedInputFile(pdf_bytes, filename=f"converted.{extension}"),
         caption=text,
-        reply_markup=get_markup_keyboard([
-            entity.Button.CONVERT.value,
-            entity.Button.FEEDBACK.value,
-            entity.Button.DONAT.value,
-        ])
+        reply_markup=get_main_markup_keyboard()
     )
     await callback.answer()

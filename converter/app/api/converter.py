@@ -115,3 +115,23 @@ async def from_pdf_to_word(service: deps.ConverterServiceDep, body: entity.Conve
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={"Content-Disposition": "attachment; filename=converted.docx"}
     )
+
+
+@router.post("/from-pdf-to-html")
+async def from_pdf_to_html(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_pdf_to_html(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="text/html",
+        headers={"Content-Disposition": "attachment; filename=converted.html"}
+    )
+
+
+@router.post("/from-word-to-fb2")
+async def from_word_to_pdf(service: deps.ConverterServiceDep, body: entity.ConvertRequest):
+    file = service.from_word_to_fb2(body.files_bytes)
+    return StreamingResponse(
+        file,
+        media_type="application/x-fictionbook+xml",
+        headers={"Content-Disposition": "attachment; filename=converted.fb2"}
+    )

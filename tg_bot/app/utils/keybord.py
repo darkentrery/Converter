@@ -45,3 +45,11 @@ def get_inline_keyboard_by_from_format(from_format: str, to_format: str) -> Inli
                 entity.Button.READY.value
             ])
     return keyboard
+
+
+def get_main_markup_keyboard() -> ReplyKeyboardMarkup:
+    return get_markup_keyboard([
+        entity.Button.CONVERT.value,
+        entity.Button.FEEDBACK.value,
+        entity.Button.DONAT.value,
+    ])
