@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Config(BaseSettings):
-    model_config = SettingsConfigDict(json_file='.json', extra='allow', case_sensitive=False, env_file='D:\\Python\\Converter\\.env')
+    model_config = SettingsConfigDict(json_file='.json', extra='allow', case_sensitive=False, env_file='.env')
 
     A4_PORTRAIT: tuple[int, int] = (595, 842)  # Размер A4 в пикселях (72 DPI)
     A4_LANDSCAPE: tuple[int, int] = (842, 595)

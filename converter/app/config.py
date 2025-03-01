@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Config(BaseSettings):
-    model_config = SettingsConfigDict(json_file='.json', extra='allow', case_sensitive=False, env_file='D:\\Python\\Converter\\.env')
+    model_config = SettingsConfigDict(json_file='.json', extra='allow', case_sensitive=False, env_file='.env')
 
     redis_host: str
     redis_port: int
