@@ -30,7 +30,7 @@ async def start_handler(message: types.Message, api_service: ApiService, state_s
         "Привет! Мы рады, что вы выбрали наш сервис! Здесь вы можете конвертировать файлы различных форматов. "
         "Также мы будем рады вашему отзыву, это позволит нам улучшить сервис. \n\n"
         "Для управления сервисом откройте меню и выберите интересующий вас пункт.",
-        reply_markup=get_main_markup_keyboard()
+        reply_markup=get_main_markup_keyboard(user)
     )
 
 
@@ -51,23 +51,39 @@ async def convert_handler(message: types.Message, api_service: ApiService, state
 
 @router.message(F.text == entity.Button.FEEDBACK.value)
 @router.message(Command("feedback"))
-async def feedback_handler(message: types.Message, state_service: StateService):
+async def feedback_handler(message: types.Message, state_service: StateService, user: entity.User):
     await state_service.set_default()
     await state_service.set_state(entity.UserState.FEEDBACK)
     await message.answer(
         "Напишите и отправьте свой отзыв.",
-        reply_markup=get_main_markup_keyboard()
+        reply_markup=get_main_markup_keyboard(user)
     )
 
 
 @router.message(F.text == entity.Button.DONAT.value)
 @router.message(Command("donat"))
-async def donat_handler(message: types.Message, state_service: StateService):
+async def donat_handler(message: types.Message, state_service: StateService, user: entity.User):
     await state_service.set_default()
     await state_service.set_state(entity.UserState.DONAT)
     await message.answer(
-        "Ваша поддержка очень важна для нас. Поддержать развитие проекта можно по адресу кошелька 0xf24b635d5a63D460Fb7514803f5A6F188fF8B807.",
-        reply_markup=get_main_markup_keyboard()
+        "Ваша поддержка очень важна для нас. Поддержать развитие проекта можно по адресу кошелька 0xf24b635d5a63D460Fb7514803f5A6F188fF8B807",
+        reply_markup=get_main_markup_keyboard(user)
+    )
+
+
+@router.message(F.text == entity.Button.STATISTIC.value)
+async def statistic_handler(message: types.Message, api_service: ApiService, user: entity.User):
+    statistic = await api_service.get_statistic()
+    actions = "\n".join([f"\t\t{action.action}: {action.count}" for action in statistic.actions])
+    from_formats = "\n".join([f"\t\t{action.format}: {action.count}" for action in statistic.from_formats])
+    to_formats = "\n".join([f"\t\t{action.format}: {action.count}" for action in statistic.to_formats])
+    text = (f"Всего пользователей: {statistic.users}.\n\n"
+            f"Статистика действий: \n{actions}\n\n"
+            f"Конвертировали из форматов: \n{from_formats}\n\n"
+            f"Конвертировали в форматы: \n{to_formats}")
+    await message.answer(
+        text,
+        reply_markup=get_main_markup_keyboard(user)
     )
 
 
@@ -85,7 +101,7 @@ async def send_feedback_handler(message: types.Message, api_service: ApiService,
     ))
     await message.answer(
         "Спасибо вам за отзыв, вы помогаете нам улучшить работу сервиса.",
-        reply_markup=get_markup_keyboard([entity.Button.CONVERT.value, entity.Button.FEEDBACK.value])
+        reply_markup=get_main_markup_keyboard(user)
     )
 
 
@@ -234,6 +250,6 @@ async def convert_files_handler(
     await callback.message.answer_document(
         BufferedInputFile(pdf_bytes, filename=f"converted.{extension}"),
         caption=text,
-        reply_markup=get_main_markup_keyboard()
+        reply_markup=get_main_markup_keyboard(user)
     )
     await callback.answer()

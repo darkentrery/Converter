@@ -1,5 +1,5 @@
 from pydantic import TypeAdapter
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import aliased
 
 from app import entity
@@ -16,6 +16,40 @@ class UserActionRepository(SARepository):
     name = "UserAction"
     model = models.UserAction
     schema = entity.UserAction
+
+    async def get_statistic_actions(self) -> list[entity.StatisticAction]:
+        stmt = select(
+            self.model.action_type.label("action"),
+            func.count(self.model.action_type).label("count"),
+        ).group_by(
+            self.model.action_type
+        )
+        rows = (await self.session.execute(stmt)).all()
+        return TypeAdapter(list[entity.StatisticAction]).validate_python(rows)
+
+    async def get_from_formats(self) -> list[entity.StatisticFormat]:
+        stmt = select(
+            self.model.comment.label("format"),
+            func.count(self.model.comment).label("count"),
+        ).filter(
+            self.model.action_type == entity.ActionType.CHOOSE_FROM
+        ).group_by(
+            self.model.comment
+        )
+        rows = (await self.session.execute(stmt)).all()
+        return TypeAdapter(list[entity.StatisticFormat]).validate_python(rows)
+
+    async def get_to_formats(self) -> list[entity.StatisticFormat]:
+        stmt = select(
+            self.model.comment.label("format"),
+            func.count(self.model.comment).label("count"),
+        ).filter(
+            self.model.action_type == entity.ActionType.CHOOSE_TO
+        ).group_by(
+            self.model.comment
+        )
+        rows = (await self.session.execute(stmt)).all()
+        return TypeAdapter(list[entity.StatisticFormat]).validate_python(rows)
 
 
 class FeedbackRepository(SARepository):

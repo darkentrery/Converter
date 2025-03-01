@@ -18,6 +18,21 @@ services:
     env_file:
       - ./.env
 
+  tg_bot:
+    container_name: tg_bot_converter
+    build:
+      context: .
+      dockerfile: tg_bot/Dockerfile
+    volumes:
+      - ./tg_bot:/home/appuser
+    depends_on:
+      - postgres
+      - pdf2html
+      - redis
+      - app
+    env_file:
+      - ./.env
+
   pdf2html:
     container_name: pdf2html
     build:
@@ -25,8 +40,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - temp_data:/tmp/
-#    ports:
-#      - "5000:5000"
 
   postgres:
     image: postgres:latest

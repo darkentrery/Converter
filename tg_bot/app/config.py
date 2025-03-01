@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,12 @@ class Config(BaseSettings):
     REDIS_PORT: int
 
     api_host: str
+    admins: str | list[str]
+
+    @field_validator("admins", mode="before")
+    @classmethod
+    def parse_admins(cls, v: str) -> list[str]:
+        return v.replace(" ", '').split(',')
 
     @property
     def base_dir(self) -> str:

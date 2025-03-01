@@ -47,6 +47,10 @@ class ApiService:
         res = await self.post("/feedbacks/", body.model_dump())
         return TypeAdapter(entity.Feedback).validate_python(res.json())
 
+    async def get_statistic(self) -> entity.Statistic:
+        res = await self.get("/user-actions/statistic")
+        return TypeAdapter(entity.Statistic).validate_python(res.json())
+
     def call_api(method: Callable):
         async def wrapper(self, *args, **kwargs) -> Response:
             res: Response = await method(self, *args, **kwargs)

@@ -6,6 +6,7 @@ class Button(enum.Enum):
     CONVERT = "Конвертация"
     FEEDBACK = "Оставить отзыв"
     DONAT = "Поддержать проект"
+    STATISTIC = "Статистика"
 
 
 class Orientation(enum.Enum):
